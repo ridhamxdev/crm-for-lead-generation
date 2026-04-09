@@ -5,8 +5,7 @@ import { Pencil, Trash2, MessageCircle, ChevronDown, MoreVertical } from 'lucide
 import StatusBadge from '@/components/ui/StatusBadge';
 import {
   formatCurrency,
-  formatDate,
-  getRelativeTime,
+  formatDateTime,
   getInitials,
   getAvatarColor,
   cn,
@@ -54,7 +53,7 @@ export default function LeadTable({
             <th className="th hidden md:table-cell">Source</th>
             <th className="th">Status</th>
             <th className="th hidden lg:table-cell">Order Value</th>
-            <th className="th hidden xl:table-cell">Updated</th>
+            <th className="th hidden xl:table-cell">Created</th>
             <th className="th text-right">Actions</th>
           </tr>
         </thead>
@@ -152,13 +151,10 @@ export default function LeadTable({
                   )}
                 </td>
 
-                {/* Updated */}
+                {/* Created */}
                 <td className="td hidden xl:table-cell">
-                  <span
-                    className="text-slate-400"
-                    title={formatDate(lead.updated_at)}
-                  >
-                    {getRelativeTime(lead.updated_at)}
+                  <span className="text-slate-400">
+                    {formatDateTime(lead.created_at)}
                   </span>
                 </td>
 
