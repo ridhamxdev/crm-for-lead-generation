@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import getDb from '@/lib/db';
 import type { Lead, UpdateLeadInput } from '@/types';
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{ id: string }> };
 
 function parseId(raw: string): number | null {
   const n = parseInt(raw, 10);
@@ -11,7 +11,8 @@ function parseId(raw: string): number | null {
 
 // ─── GET /api/leads/[id] ──────────────────────────────────────────────────────
 export async function GET(_req: NextRequest, { params }: RouteContext) {
-  const id = parseId(params.id);
+  const { id: rawId } = await params;
+  const id = parseId(rawId);
   if (!id) return NextResponse.json({ error: 'Invalid lead ID.' }, { status: 400 });
 
   try {
@@ -29,7 +30,8 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 
 // ─── PUT /api/leads/[id] ──────────────────────────────────────────────────────
 export async function PUT(request: NextRequest, { params }: RouteContext) {
-  const id = parseId(params.id);
+  const { id: rawId } = await params;
+  const id = parseId(rawId);
   if (!id) return NextResponse.json({ error: 'Invalid lead ID.' }, { status: 400 });
 
   try {
@@ -107,7 +109,8 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
 
 // ─── DELETE /api/leads/[id] ───────────────────────────────────────────────────
 export async function DELETE(_req: NextRequest, { params }: RouteContext) {
-  const id = parseId(params.id);
+  const { id: rawId } = await params;
+  const id = parseId(rawId);
   if (!id) return NextResponse.json({ error: 'Invalid lead ID.' }, { status: 400 });
 
   try {
