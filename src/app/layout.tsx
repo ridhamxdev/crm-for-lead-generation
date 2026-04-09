@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Vision Glass CRM',
-  description: 'Lead management system for Vision Glass Interiors',
+  title: 'Lead Generation CRM',
+  description: 'Lead management and sales pipeline CRM',
 };
 
 export const viewport: Viewport = {

@@ -2,7 +2,7 @@
 
 import { LayoutDashboard, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { View } from '@/app/page';
+import type { View } from '@/types';
 
 interface MobileNavProps {
   currentView: View;

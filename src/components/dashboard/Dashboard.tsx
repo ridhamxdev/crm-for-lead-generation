@@ -9,6 +9,8 @@ import {
   ArrowRight,
   RefreshCw,
   Plus,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import {
@@ -23,6 +25,24 @@ import type { DashboardStats, Lead, LeadStatus } from '@/types';
 interface DashboardProps {
   onNavigateToLeads: () => void;
 }
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+function toYearMonth(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+function monthLabel(ym: string) {
+  const [y, m] = ym.split('-');
+  return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('en-IN', {
+    month: 'long',
+    year: 'numeric',
+  });
+}
+function addMonths(ym: string, delta: number) {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return toYearMonth(d);
+}
+const THIS_MONTH = toYearMonth(new Date());
 
 const PIPELINE_COLORS: Record<string, string> = {
   new: 'bg-indigo-500',
@@ -45,21 +65,22 @@ const PIPELINE_DOTS: Record<string, string> = {
 };
 
 export default function Dashboard({ onNavigateToLeads }: DashboardProps) {
+  const [month, setMonth] = useState(THIS_MONTH);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingLeads, setLoadingLeads] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = async (m: string) => {
     setLoadingStats(true);
     setLoadingLeads(true);
     setError(null);
 
     try {
       const [statsRes, leadsRes] = await Promise.all([
-        fetch('/api/leads?stats=1'),
-        fetch('/api/leads'),
+        fetch(`/api/leads?stats=1&month=${m}`),
+        fetch(`/api/leads?month=${m}`),
       ]);
 
       const [statsData, leadsData] = await Promise.all([
@@ -81,15 +102,15 @@ export default function Dashboard({ onNavigateToLeads }: DashboardProps) {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData(month);
+  }, [month]);
 
   if (error) {
     return (
       <div className="p-6">
         <div className="card p-6 text-center">
           <p className="text-sm text-red-600 mb-3">{error}</p>
-          <button onClick={fetchData} className="btn-secondary gap-2 mx-auto">
+          <button onClick={() => fetchData(month)} className="btn-secondary gap-2 mx-auto">
             <RefreshCw size={14} />
             Retry
           </button>
@@ -113,13 +134,44 @@ export default function Dashboard({ onNavigateToLeads }: DashboardProps) {
     <div className="p-4 sm:p-6 space-y-5">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl font-bold text-slate-900">Dashboard</h2>
           <p className="text-sm text-slate-400 mt-0.5">
             {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
         </div>
+
+        {/* Month picker */}
+        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-2 py-1.5 shadow-sm">
+          <button
+            onClick={() => setMonth((m) => addMonths(m, -1))}
+            className="btn-icon w-7 h-7 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
+            aria-label="Previous month"
+          >
+            <ChevronLeft size={15} />
+          </button>
+          <span className="text-xs font-semibold text-slate-700 min-w-[110px] text-center">
+            {monthLabel(month)}
+          </span>
+          <button
+            onClick={() => setMonth((m) => addMonths(m, 1))}
+            disabled={month >= THIS_MONTH}
+            className="btn-icon w-7 h-7 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg disabled:opacity-30 disabled:pointer-events-none"
+            aria-label="Next month"
+          >
+            <ChevronRight size={15} />
+          </button>
+          {month !== THIS_MONTH && (
+            <button
+              onClick={() => setMonth(THIS_MONTH)}
+              className="ml-1 text-[10px] font-semibold text-indigo-600 hover:underline"
+            >
+              Today
+            </button>
+          )}
+        </div>
+
         <button
           onClick={onNavigateToLeads}
           className="btn-primary flex items-center gap-2"
@@ -149,7 +201,7 @@ export default function Dashboard({ onNavigateToLeads }: DashboardProps) {
                 </div>
               </div>
               <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
-              <p className="text-[11px] text-slate-400 mt-1">All time</p>
+              <p className="text-[11px] text-slate-400 mt-1">{monthLabel(month)}</p>
             </div>
 
             {/* Active */}

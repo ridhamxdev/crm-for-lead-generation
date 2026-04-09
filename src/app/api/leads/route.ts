@@ -12,10 +12,17 @@ export async function GET(request: NextRequest) {
     const source = searchParams.get('source');
     const search = searchParams.get('search');
     const stats = searchParams.get('stats');
+    const month = searchParams.get('month'); // format: YYYY-MM
 
     // Return dashboard stats if ?stats=1
     if (stats === '1') {
-      const rows = (await client.execute('SELECT status, order_value FROM leads'))
+      let statsSql = 'SELECT status, order_value FROM leads';
+      const statsArgs: (string | number)[] = [];
+      if (month) {
+        statsSql += ' WHERE created_at LIKE ?';
+        statsArgs.push(`${month}%`);
+      }
+      const rows = (await client.execute({ sql: statsSql, args: statsArgs }))
         .rows as unknown as { status: string; order_value: number | null }[];
 
       const result: DashboardStats = {
@@ -63,6 +70,11 @@ export async function GET(request: NextRequest) {
     if (source && source !== 'all') {
       conditions.push('source = ?');
       args.push(source);
+    }
+
+    if (month) {
+      conditions.push("created_at LIKE ?");
+      args.push(`${month}%`);
     }
 
     if (search?.trim()) {

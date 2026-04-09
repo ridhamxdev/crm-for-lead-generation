@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, LayoutGrid, List, X, Filter } from 'lucide-react';
+import { Search, Plus, LayoutGrid, List, X, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import LeadTable from './LeadTable';
 import LeadCard from './LeadCard';
 import LeadFormModal from './LeadFormModal';
@@ -15,6 +15,23 @@ import { cn } from '@/lib/utils';
 
 type ViewMode = 'table' | 'grid';
 
+function toYearMonth(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+function monthLabel(ym: string) {
+  const [y, m] = ym.split('-');
+  return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('en-IN', {
+    month: 'short',
+    year: 'numeric',
+  });
+}
+function addMonths(ym: string, delta: number) {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return toYearMonth(d);
+}
+const THIS_MONTH = toYearMonth(new Date());
+
 export default function LeadsView() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +41,7 @@ export default function LeadsView() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [monthFilter, setMonthFilter] = useState<string>('all'); // 'all' or 'YYYY-MM'
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [showFilters, setShowFilters] = useState(false);
 
@@ -42,6 +60,7 @@ export default function LeadsView() {
       if (search) params.set('search', search);
       if (statusFilter !== 'all') params.set('status', statusFilter);
       if (sourceFilter !== 'all') params.set('source', sourceFilter);
+      if (monthFilter !== 'all') params.set('month', monthFilter);
 
       const res = await fetch(`/api/leads?${params}`);
       const data = await res.json();
@@ -52,7 +71,7 @@ export default function LeadsView() {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, sourceFilter]);
+  }, [search, statusFilter, sourceFilter, monthFilter]);
 
   // Debounced fetch on filter changes
   useEffect(() => {
@@ -106,7 +125,7 @@ export default function LeadsView() {
     });
   };
 
-  const activeFilters = [statusFilter !== 'all', sourceFilter !== 'all'].filter(Boolean).length;
+  const activeFilters = [statusFilter !== 'all', sourceFilter !== 'all', monthFilter !== 'all'].filter(Boolean).length;
 
   return (
     <div className="p-4 sm:p-6 space-y-4">
@@ -128,6 +147,39 @@ export default function LeadsView() {
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
               <X size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Month navigator */}
+        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-2 py-1.5 shadow-sm">
+          <button
+            onClick={() => setMonthFilter((m) => addMonths(m === 'all' ? THIS_MONTH : m, -1))}
+            className="btn-icon w-7 h-7 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
+            aria-label="Previous month"
+          >
+            <ChevronLeft size={15} />
+          </button>
+          <span className="text-xs font-semibold text-slate-700 min-w-[90px] text-center">
+            {monthFilter === 'all' ? 'All Time' : monthLabel(monthFilter)}
+          </span>
+          <button
+            onClick={() => setMonthFilter((m) => {
+              if (m === 'all') return THIS_MONTH;
+              const next = addMonths(m, 1);
+              return next > THIS_MONTH ? 'all' : next;
+            })}
+            className="btn-icon w-7 h-7 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
+            aria-label="Next month"
+          >
+            <ChevronRight size={15} />
+          </button>
+          {monthFilter !== 'all' && (
+            <button
+              onClick={() => setMonthFilter('all')}
+              className="ml-1 text-[10px] font-semibold text-indigo-600 hover:underline"
+            >
+              All
             </button>
           )}
         </div>
@@ -223,6 +275,7 @@ export default function LeadsView() {
                 onClick={() => {
                   setStatusFilter('all');
                   setSourceFilter('all');
+                  setMonthFilter('all');
                 }}
                 className="btn-secondary text-xs h-[42px]"
               >

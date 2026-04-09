@@ -2,7 +2,8 @@
 
 import { LayoutDashboard, Users, X, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { View } from '@/app/page';
+import { useUser } from '@/lib/useUser';
+import type { View } from '@/types';
 
 interface SidebarProps {
   currentView: View;
@@ -17,6 +18,11 @@ const NAV_ITEMS = [
 ];
 
 export default function Sidebar({ currentView, onViewChange, isOpen, onClose }: SidebarProps) {
+  const user = useUser();
+  const initials = user?.name
+    ? user.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+    : '…';
+
   return (
     <>
       {/* Mobile overlay */}
@@ -44,7 +50,7 @@ export default function Sidebar({ currentView, onViewChange, isOpen, onClose }: 
               <TrendingUp size={18} className="text-white" />
             </div>
             <div>
-              <p className="text-sm font-bold text-white leading-tight">Vision Glass</p>
+              <p className="text-sm font-bold text-white leading-tight">Lead Gen CRM</p>
               <p className="text-[10px] text-slate-400 font-medium tracking-wide uppercase">
                 CRM
               </p>
@@ -76,12 +82,17 @@ export default function Sidebar({ currentView, onViewChange, isOpen, onClose }: 
           ))}
         </nav>
 
-        {/* Footer */}
-        <div className="px-5 py-4 border-t border-white/10">
-          <p className="text-[11px] text-slate-500 leading-snug">
-            visionglassinteriors.in
-          </p>
-          <p className="text-[10px] text-slate-600 mt-0.5">Lead Management v1.0</p>
+        {/* Footer — user info */}
+        <div className="px-4 py-4 border-t border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-white truncate">{user?.name ?? '—'}</p>
+              <p className="text-[10px] text-slate-500 truncate">{user?.email ?? ''}</p>
+            </div>
+          </div>
         </div>
       </aside>
     </>
