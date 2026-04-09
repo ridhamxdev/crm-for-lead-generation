@@ -166,7 +166,7 @@ export default function WhatsAppModal({ lead, onClose }: Props) {
       isOpen
       onClose={onClose}
       title="Send WhatsApp Message"
-      maxWidth="max-w-lg"
+      size="md"
     >
       {/* Lead Info */}
       <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-4 border border-slate-100">
