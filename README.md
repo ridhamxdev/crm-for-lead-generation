@@ -185,7 +185,7 @@ Deploy to [Vercel](https://vercel.com):
 
 ## License
 
-MIT
+MIT License — Copyright &copy; 2026 [ridhamxdev](https://github.com/ridhamxdev)
 
 
 ---
