@@ -19,6 +19,9 @@ interface LeadTableProps {
   onDelete: (lead: Lead) => void;
   onWhatsApp: (lead: Lead) => void;
   onStatusChange: (id: number, status: LeadStatus) => void;
+  selectedIds?: Set<number>;
+  onSelect?: (id: number, checked: boolean) => void;
+  onSelectAll?: (checked: boolean) => void;
 }
 
 export default function LeadTable({
@@ -27,6 +30,9 @@ export default function LeadTable({
   onDelete,
   onWhatsApp,
   onStatusChange,
+  selectedIds,
+  onSelect,
+  onSelectAll,
 }: LeadTableProps) {
   const [openStatusId, setOpenStatusId] = useState<number | null>(null);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
@@ -48,6 +54,17 @@ export default function LeadTable({
       <table className="w-full min-w-[700px]">
         <thead>
           <tr className="border-b border-slate-100">
+            {onSelect && (
+              <th className="th w-10 pl-4 pr-0">
+                <input
+                  type="checkbox"
+                  aria-label="Select all leads"
+                  checked={leads.length > 0 && selectedIds?.size === leads.length}
+                  onChange={(e) => onSelectAll?.(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-indigo-600 cursor-pointer focus:ring-indigo-500"
+                />
+              </th>
+            )}
             <th className="th">Lead</th>
             <th className="th">Phone</th>
             <th className="th hidden md:table-cell">Source</th>
@@ -67,6 +84,17 @@ export default function LeadTable({
                 key={lead.id}
                 className="hover:bg-slate-50/60 transition-colors group"
               >
+                {onSelect && (
+                  <td className="td w-10 pl-4 pr-0" onClick={stopPropagation}>
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${lead.name}`}
+                      checked={selectedIds?.has(lead.id) ?? false}
+                      onChange={(e) => onSelect(lead.id, e.target.checked)}
+                      className="w-4 h-4 rounded border-slate-300 text-indigo-600 cursor-pointer focus:ring-indigo-500"
+                    />
+                  </td>
+                )}
                 {/* Lead name + email */}
                 <td className="td">
                   <div className="flex items-center gap-3">

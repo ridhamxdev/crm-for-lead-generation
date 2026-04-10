@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, LayoutGrid, List, X, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, LayoutGrid, List, X, Filter, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
 import LeadTable from './LeadTable';
 import LeadCard from './LeadCard';
 import LeadFormModal from './LeadFormModal';
 import WhatsAppModal from './WhatsAppModal';
+import BulkWhatsAppModal from './BulkWhatsAppModal';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
@@ -51,6 +52,10 @@ export default function LeadsView() {
   const [whatsAppLead, setWhatsAppLead] = useState<Lead | null>(null);
   const [deleteLead, setDeleteLead] = useState<Lead | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showBulkWhatsApp, setShowBulkWhatsApp] = useState(false);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -123,6 +128,19 @@ export default function LeadsView() {
       }
       return [saved, ...prev];
     });
+  };
+
+  const handleSelectLead = (id: number, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    setSelectedIds(checked ? new Set(leads.map((l) => l.id)) : new Set());
   };
 
   const activeFilters = [statusFilter !== 'all', sourceFilter !== 'all', monthFilter !== 'all'].filter(Boolean).length;
@@ -349,9 +367,20 @@ export default function LeadsView() {
         <>
           {/* Mobile: always card grid */}
           <div className="lg:hidden">
-            <p className="text-xs font-semibold text-slate-500 mb-3">
-              {leads.length} lead{leads.length !== 1 ? 's' : ''}
-            </p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-slate-500">
+                {leads.length} lead{leads.length !== 1 ? 's' : ''}
+              </p>
+              <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-slate-500">
+                <input
+                  type="checkbox"
+                  checked={leads.length > 0 && selectedIds.size === leads.length}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-indigo-600 cursor-pointer focus:ring-indigo-500"
+                />
+                Select All
+              </label>
+            </div>
             <div className="grid grid-cols-1 gap-3">
               {leads.map((lead) => (
                 <LeadCard
@@ -361,6 +390,8 @@ export default function LeadsView() {
                   onDelete={setDeleteLead}
                   onWhatsApp={setWhatsAppLead}
                   onStatusChange={handleStatusChange}
+                  selected={selectedIds.has(lead.id)}
+                  onSelect={handleSelectLead}
                 />
               ))}
             </div>
@@ -381,13 +412,27 @@ export default function LeadsView() {
                   onDelete={setDeleteLead}
                   onWhatsApp={setWhatsAppLead}
                   onStatusChange={handleStatusChange}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectLead}
+                  onSelectAll={handleSelectAll}
                 />
               </div>
             ) : (
               <div>
-                <p className="text-xs font-semibold text-slate-500 mb-3">
-                  {leads.length} lead{leads.length !== 1 ? 's' : ''}
-                </p>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold text-slate-500">
+                    {leads.length} lead{leads.length !== 1 ? 's' : ''}
+                  </p>
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-slate-500">
+                    <input
+                      type="checkbox"
+                      checked={leads.length > 0 && selectedIds.size === leads.length}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="w-4 h-4 rounded border-slate-300 text-indigo-600 cursor-pointer focus:ring-indigo-500"
+                    />
+                    Select All
+                  </label>
+                </div>
                 <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
                   {leads.map((lead) => (
                     <LeadCard
@@ -397,6 +442,8 @@ export default function LeadsView() {
                       onDelete={setDeleteLead}
                       onWhatsApp={setWhatsAppLead}
                       onStatusChange={handleStatusChange}
+                      selected={selectedIds.has(lead.id)}
+                      onSelect={handleSelectLead}
                     />
                   ))}
                 </div>
@@ -414,6 +461,28 @@ export default function LeadsView() {
       >
         <Plus size={24} />
       </button>
+
+      {/* Bulk selection action bar */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-20 sm:bottom-6 left-4 right-4 z-20 flex items-center gap-3 bg-slate-900 text-white rounded-2xl shadow-2xl px-4 py-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:min-w-[380px]">
+          <span className="flex-1 text-sm font-semibold">
+            {selectedIds.size} lead{selectedIds.size !== 1 ? 's' : ''} selected
+          </span>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-xs text-slate-400 hover:text-white transition-colors"
+          >
+            Clear
+          </button>
+          <button
+            onClick={() => setShowBulkWhatsApp(true)}
+            className="btn-whatsapp text-sm px-4 py-2 flex items-center gap-2"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Send Follow-ups
+          </button>
+        </div>
+      )}
 
       {/* Modals */}
       {showAddModal && (
@@ -433,6 +502,12 @@ export default function LeadsView() {
       )}
       {whatsAppLead && (
         <WhatsAppModal lead={whatsAppLead} onClose={() => setWhatsAppLead(null)} />
+      )}
+      {showBulkWhatsApp && selectedIds.size > 0 && (
+        <BulkWhatsAppModal
+          leads={leads.filter((l) => selectedIds.has(l.id))}
+          onClose={() => setShowBulkWhatsApp(false)}
+        />
       )}
       {deleteLead && (
         <ConfirmDialog

@@ -29,6 +29,8 @@ interface LeadCardProps {
   onDelete: (lead: Lead) => void;
   onWhatsApp: (lead: Lead) => void;
   onStatusChange: (id: number, status: LeadStatus) => void;
+  selected?: boolean;
+  onSelect?: (id: number, checked: boolean) => void;
 }
 
 export default function LeadCard({
@@ -37,6 +39,8 @@ export default function LeadCard({
   onDelete,
   onWhatsApp,
   onStatusChange,
+  selected,
+  onSelect,
 }: LeadCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
@@ -45,10 +49,21 @@ export default function LeadCard({
   const avatarColor = getAvatarColor(lead.name);
 
   return (
-    <div className="card overflow-hidden transition-shadow hover:shadow-md active:shadow-sm">
+    <div className={cn('card overflow-hidden transition-shadow hover:shadow-md active:shadow-sm', selected && 'ring-2 ring-indigo-400 border-indigo-200')}>
       {/* Top section */}
       <div className="p-4">
         <div className="flex items-start gap-3">
+          {/* Selection checkbox */}
+          {onSelect && (
+            <input
+              type="checkbox"
+              aria-label={`Select ${lead.name}`}
+              checked={selected ?? false}
+              onChange={(e) => onSelect(lead.id, e.target.checked)}
+              onClick={(e) => e.stopPropagation()}
+              className="mt-1 w-4 h-4 rounded border-slate-300 text-indigo-600 cursor-pointer focus:ring-indigo-500 shrink-0"
+            />
+          )}
           {/* Avatar */}
           <div
             className={`w-11 h-11 rounded-xl flex-shrink-0 flex items-center justify-center text-sm font-bold text-white ${avatarColor}`}
