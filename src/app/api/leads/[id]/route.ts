@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import getDb from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { getSessionFromRequest } from '@/lib/auth';
 import type { Lead, UpdateLeadInput } from '@/types';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -13,7 +13,7 @@ function parseId(raw: string): number | null {
 // ─── GET /api/leads/[id] ──────────────────────────────────────────────────────
 export async function GET(_req: NextRequest, { params }: RouteContext) {
   try {
-    const session = await getSession();
+    const session = await getSessionFromRequest(_req);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
     }
@@ -37,7 +37,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 // ─── PUT /api/leads/[id] ──────────────────────────────────────────────────────
 export async function PUT(request: NextRequest, { params }: RouteContext) {
   try {
-    const session = await getSession();
+    const session = await getSessionFromRequest(request);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
     }
@@ -121,7 +121,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
 // ─── DELETE /api/leads/[id] ───────────────────────────────────────────────────
 export async function DELETE(_req: NextRequest, { params }: RouteContext) {
   try {
-    const session = await getSession();
+    const session = await getSessionFromRequest(_req);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
     }

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import getDb from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { getSessionFromRequest } from '@/lib/auth';
 import type { CreateLeadInput, Lead, DashboardStats } from '@/types';
 
 // ─── GET /api/leads ───────────────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSessionFromRequest(request);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
     }
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
 // ─── POST /api/leads ──────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSessionFromRequest(request);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
     }

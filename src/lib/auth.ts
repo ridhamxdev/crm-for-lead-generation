@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
-import { cookies } from 'next/headers';
+import type { NextRequest } from 'next/server';
 
 export const SESSION_COOKIE = 'crm_session';
 
@@ -31,10 +31,9 @@ export async function verifyToken(token: string): Promise<SessionPayload | null>
   }
 }
 
-export async function getSession(): Promise<SessionPayload | null> {
+export async function getSessionFromRequest(request: NextRequest): Promise<SessionPayload | null> {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(SESSION_COOKIE)?.value;
+    const token = request.cookies.get(SESSION_COOKIE)?.value;
     if (!token) return null;
     return await verifyToken(token);
   } catch {
