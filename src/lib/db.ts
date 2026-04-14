@@ -39,6 +39,7 @@ async function initializeSchema(client: Client): Promise<void> {
       {
         sql: `CREATE TABLE IF NOT EXISTS leads (
           id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id     INTEGER NOT NULL,
           name        TEXT NOT NULL,
           phone       TEXT NOT NULL,
           email       TEXT,
@@ -48,7 +49,8 @@ async function initializeSchema(client: Client): Promise<void> {
           notes       TEXT,
           address     TEXT,
           created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now', 'localtime')),
-          updated_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now', 'localtime'))
+          updated_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now', 'localtime')),
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
         args: [],
       },

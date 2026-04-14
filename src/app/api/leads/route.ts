@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import getDb from '@/lib/db';
+import { getSession } from '@/lib/auth';
 import type { CreateLeadInput, Lead, DashboardStats } from '@/types';
 
 // ─── GET /api/leads ───────────────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+    }
+
     const client = await getDb();
     const { searchParams } = new URL(request.url);
 
@@ -16,10 +22,10 @@ export async function GET(request: NextRequest) {
 
     // Return dashboard stats if ?stats=1
     if (stats === '1') {
-      let statsSql = 'SELECT status, order_value FROM leads';
-      const statsArgs: (string | number)[] = [];
+      let statsSql = 'SELECT status, order_value FROM leads WHERE user_id = ?';
+      const statsArgs: (string | number)[] = [session.userId];
       if (month) {
-        statsSql += ' WHERE created_at LIKE ?';
+        statsSql += ' AND created_at LIKE ?';
         statsArgs.push(`${month}%`);
       }
       const rows = (await client.execute({ sql: statsSql, args: statsArgs }))
@@ -59,8 +65,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query
-    const conditions: string[] = [];
-    const args: (string | number)[] = [];
+    const conditions: string[] = ['user_id = ?'];
+    const args: (string | number)[] = [session.userId];
 
     if (status && status !== 'all') {
       conditions.push('status = ?');
@@ -83,7 +89,7 @@ export async function GET(request: NextRequest) {
       args.push(term, term, term, term);
     }
 
-    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const where = `WHERE ${conditions.join(' AND ')}`;
     const sql = `SELECT * FROM leads ${where} ORDER BY updated_at DESC`;
 
     const result = await client.execute({ sql, args });
@@ -98,6 +104,11 @@ export async function GET(request: NextRequest) {
 // ─── POST /api/leads ──────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+    }
+
     const body: CreateLeadInput = await request.json();
 
     if (!body.name?.trim()) {
@@ -121,9 +132,10 @@ export async function POST(request: NextRequest) {
     const client = await getDb();
 
     const insertResult = await client.execute({
-      sql: `INSERT INTO leads (name, phone, email, source, status, order_value, notes, address)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO leads (user_id, name, phone, email, source, status, order_value, notes, address)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
+        session.userId,
         body.name.trim(),
         body.phone.trim(),
         body.email?.trim() ?? null,

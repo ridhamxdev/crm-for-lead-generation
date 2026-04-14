@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import getDb from '@/lib/db';
+import { getSession } from '@/lib/auth';
 import type { Lead, UpdateLeadInput } from '@/types';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -11,13 +12,18 @@ function parseId(raw: string): number | null {
 
 // ─── GET /api/leads/[id] ──────────────────────────────────────────────────────
 export async function GET(_req: NextRequest, { params }: RouteContext) {
-  const { id: rawId } = await params;
-  const id = parseId(rawId);
-  if (!id) return NextResponse.json({ error: 'Invalid lead ID.' }, { status: 400 });
-
   try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+    }
+
+    const { id: rawId } = await params;
+    const id = parseId(rawId);
+    if (!id) return NextResponse.json({ error: 'Invalid lead ID.' }, { status: 400 });
+
     const client = await getDb();
-    const result = await client.execute({ sql: 'SELECT * FROM leads WHERE id = ?', args: [id] });
+    const result = await client.execute({ sql: 'SELECT * FROM leads WHERE id = ? AND user_id = ?', args: [id, session.userId] });
     const lead = result.rows[0] as unknown as Lead | undefined;
 
     if (!lead) return NextResponse.json({ error: 'Lead not found.' }, { status: 404 });
@@ -30,13 +36,18 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 
 // ─── PUT /api/leads/[id] ──────────────────────────────────────────────────────
 export async function PUT(request: NextRequest, { params }: RouteContext) {
-  const { id: rawId } = await params;
-  const id = parseId(rawId);
-  if (!id) return NextResponse.json({ error: 'Invalid lead ID.' }, { status: 400 });
-
   try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+    }
+
+    const { id: rawId } = await params;
+    const id = parseId(rawId);
+    if (!id) return NextResponse.json({ error: 'Invalid lead ID.' }, { status: 400 });
+
     const client = await getDb();
-    const existingResult = await client.execute({ sql: 'SELECT * FROM leads WHERE id = ?', args: [id] });
+    const existingResult = await client.execute({ sql: 'SELECT * FROM leads WHERE id = ? AND user_id = ?', args: [id, session.userId] });
     const existing = existingResult.rows[0] as unknown as Lead | undefined;
     if (!existing) return NextResponse.json({ error: 'Lead not found.' }, { status: 404 });
 
@@ -109,13 +120,18 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
 
 // ─── DELETE /api/leads/[id] ───────────────────────────────────────────────────
 export async function DELETE(_req: NextRequest, { params }: RouteContext) {
-  const { id: rawId } = await params;
-  const id = parseId(rawId);
-  if (!id) return NextResponse.json({ error: 'Invalid lead ID.' }, { status: 400 });
-
   try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+    }
+
+    const { id: rawId } = await params;
+    const id = parseId(rawId);
+    if (!id) return NextResponse.json({ error: 'Invalid lead ID.' }, { status: 400 });
+
     const client = await getDb();
-    const existing = await client.execute({ sql: 'SELECT id FROM leads WHERE id = ?', args: [id] });
+    const existing = await client.execute({ sql: 'SELECT id FROM leads WHERE id = ? AND user_id = ?', args: [id, session.userId] });
     if (!existing.rows[0]) return NextResponse.json({ error: 'Lead not found.' }, { status: 404 });
 
     await client.execute({ sql: 'DELETE FROM leads WHERE id = ?', args: [id] });
